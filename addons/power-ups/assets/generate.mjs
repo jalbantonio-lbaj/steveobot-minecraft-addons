@@ -276,6 +276,48 @@ const SPRITES = {
       '................',
     ],
   },
+  rabbit_boy_costume: {
+    pal: { K: '#1b2238', w: '#f7fbff', s: '#dbe9f7', E: '#1b2238' },
+    px: [
+      '....KK....KK....',
+      '...KwwK..KwwK...',
+      '...KwsK..KwsK...',
+      '...KwsK..KwsK...',
+      '...KwsK..KwsK...',
+      '...KwsK..KwsK...',
+      '..KKwwKKKKwwKK..',
+      '.KwwwwwwwwwwwwK.',
+      '.KwwwwwwwwwwwwK.',
+      '.KwwwEwwwwEwwwK.',
+      '.KwwwEwwwwEwwwK.',
+      '.KwwwwwwwwwwwwK.',
+      '.KwwwEwwwwEwwwK.',
+      '.KwwwwEEEEwwwwK.',
+      '.KssssssssssssK.',
+      '..KKKKKKKKKKKK..',
+    ],
+  },
+  king_viking_costume: {
+    pal: { K: '#1b2238', H: '#8d96a8', G: '#f2c230', I: '#f5efd8', s: '#f0b48a', B: '#5a2d0c', E: '#1b2238', O: '#e8731a' },
+    px: [
+      '.II..........II.',
+      '.III........III.',
+      '..IIKKKKKKKKII..',
+      '..KHHHHHHHHHHK..',
+      '..KHHHHHHHHHHK..',
+      '..KGGGGGGGGGGK..',
+      '..KsBBBssBBBsK..',
+      '..KssEssssEssK..',
+      '..KssssssssssK..',
+      '..KOOOssssOOOK..',
+      '..KOOOOOOOOOOK..',
+      '..KOOOOOOOOOOK..',
+      '...KOOOOOOOOK...',
+      '....KOOOOOOK....',
+      '.....KOOOOK.....',
+      '......KKKK......',
+    ],
+  },
 };
 
 function render(sprite, scale) {
@@ -297,6 +339,122 @@ function render(sprite, scale) {
   });
   return png(size, size, buf);
 }
+
+// The Rabbit Boy Costume's worn texture: a 64×64 sheet in the standard skin
+// layout, so each box of models/entity/rabbit_boy_costume.geo.json finds its
+// faces where a player skin would have them. The ears use the otherwise
+// unused strip at (0, 32).
+const COSTUME_BOXES = [
+  // [u, v, width, height, depth]
+  [0, 0, 8, 8, 8], // head
+  [16, 16, 8, 12, 4], // body
+  [40, 16, 4, 12, 4], // right arm
+  [32, 48, 4, 12, 4], // left arm
+  [0, 16, 4, 12, 4], // right leg
+  [16, 48, 4, 12, 4], // left leg
+  [0, 32, 2, 9, 2], // ear (both ears share it); must stay last
+];
+const FUR = { top: '#f7fbff', front: '#f7fbff', side: '#dbe9f7', back: '#e6f0fa', bottom: '#c3d6ea' };
+const FACE_INK = '#1b2238';
+// Eyes and smile on the 8×8 front of the head, as [x, y] from its top-left.
+const FACE = [[2, 2], [2, 3], [5, 2], [5, 3], [1, 5], [2, 6], [3, 6], [4, 6], [5, 6], [6, 5]];
+
+function costumeTexture({ ears }) {
+  const size = 64;
+  const buf = Buffer.alloc(size * size * 4);
+  const fill = (x0, y0, w, h, colour) => {
+    const c = hex(colour);
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+      const i = (y * size + x) * 4;
+      buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = c[3];
+    }
+  };
+  for (const [u, v, w, h, d] of ears ? COSTUME_BOXES : COSTUME_BOXES.slice(0, -1)) {
+    fill(u + d, v, w, d, FUR.top);
+    fill(u + d + w, v, w, d, FUR.bottom);
+    fill(u, v + d, d, h, FUR.side);
+    fill(u + d, v + d, w, h, FUR.front);
+    fill(u + d + w, v + d, d, h, FUR.side);
+    fill(u + d + w + d, v + d, w, h, FUR.back);
+  }
+  for (const [x, y] of FACE) fill(8 + x, 8 + y, 1, 1, FACE_INK);
+  return png(size, size, buf);
+}
+fs.writeFileSync(path.join(out, 'resource_pack/textures/models/armor/rabbit_boy_costume.png'), costumeTexture({ ears: true }));
+// The same sheet as a regular player skin, for importing in the Dressing Room
+// (Classic Skins > Owned > Import). No ears: a skin can only paint the standard
+// body, and the ear strip would show up as a patch on the right leg's overlay.
+fs.writeFileSync(path.join(out, 'assets/rabbit_boy_skin.png'), costumeTexture({ ears: false }));
+
+// King Viking, the villain, as a regular player skin: horned helmet with a
+// gold crown band, angry brows, a big orange beard, a dark red tunic. Each
+// part lists its rows top to bottom; a one-letter row fills the whole width.
+// `rows` wraps all four sides unless `front` or `side` replaces it.
+const VIKING_PAL = {
+  H: '#8d96a8', // helmet
+  G: '#f2c230', // crown band, belt buckle
+  I: '#f5efd8', // horn
+  s: '#f0b48a', // skin
+  B: '#5a2d0c', // brows
+  E: '#1b2238', // eyes
+  O: '#e8731a', // beard and hair
+  o: '#c25a0e', // beard shade
+  T: '#6d1f3a', // tunic
+  L: '#5b3a1e', // belt, bracers
+  P: '#3a3f4d', // trousers
+  b: '#3a2412', // boots
+};
+const ARM = { top: 'T', bottom: 's', rows: ['T', 'T', 'T', 'T', 'T', 'T', 'T', 'T', 'L', 's', 's', 's'] };
+const LEG = { top: 'P', bottom: 'b', rows: ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'b', 'b', 'b', 'b'] };
+const VIKING_PARTS = [
+  {
+    box: [0, 0, 8, 8, 8], top: 'H', bottom: 'O',
+    rows: ['H', 'H', 'G', 'O', 'O', 'O', 'O', 'O'],
+    front: ['H', 'H', 'G', 'sBBssBBs', 'ssEssEss', 'OOOssOOO', 'O', 'OoOOOOoO'],
+    side: ['H', 'HHHIIHHH', 'GGIIIIGG', 'sssIIsss', 's', 'O', 'O', 'O'],
+  },
+  {
+    box: [16, 16, 8, 12, 4], top: 'T', bottom: 'T',
+    rows: ['T', 'T', 'T', 'T', 'T', 'T', 'T', 'L', 'T', 'T', 'T', 'T'],
+    front: ['TTOOOOTT', 'TTOOOOTT', 'TTToOTTT', 'T', 'T', 'T', 'T', 'LLLGGLLL', 'T', 'T', 'T', 'T'],
+  },
+  { box: [40, 16, 4, 12, 4], ...ARM },
+  { box: [32, 48, 4, 12, 4], ...ARM },
+  { box: [0, 16, 4, 12, 4], ...LEG },
+  { box: [16, 48, 4, 12, 4], ...LEG },
+];
+
+function vikingSkin({ horns }) {
+  const size = 64;
+  const buf = Buffer.alloc(size * size * 4);
+  const dot = (x, y, ch) => {
+    const colour = VIKING_PAL[ch];
+    if (!colour) throw new Error(`unknown pixel '${ch}'`);
+    const c = hex(colour);
+    const i = (y * size + x) * 4;
+    buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = c[3];
+  };
+  const face = (x0, y0, w, rows) => rows.forEach((row, y) => {
+    if (row.length !== 1 && row.length !== w) throw new Error(`row '${row}' is not ${w} wide`);
+    for (let x = 0; x < w; x++) dot(x0 + x, y0 + y, row.length === 1 ? row : row[x]);
+  });
+  for (const part of VIKING_PARTS) {
+    const [u, v, w, h, d] = part.box;
+    if (part.rows.length !== h) throw new Error('part rows must match its height');
+    face(u + d, v, w, Array(d).fill(part.top));
+    face(u + d + w, v, w, Array(d).fill(part.bottom));
+    face(u, v + d, d, part.side ?? part.rows);
+    face(u + d, v + d, w, part.front ?? part.rows);
+    face(u + d + w, v + d, d, part.side ?? part.rows);
+    face(u + d + w + d, v + d, w, part.rows);
+  }
+  // The costume's 3D horns take their faces from the strip at (0, 32), which a
+  // real skin must leave empty (it is the right leg's overlay there).
+  if (horns) for (let y = 32; y < 44; y++) for (let x = 0; x < 16; x++) dot(x, y, 'I');
+  return png(size, size, buf);
+}
+fs.writeFileSync(path.join(out, 'assets/king_viking_skin.png'), vikingSkin({ horns: false }));
+fs.writeFileSync(path.join(out, 'resource_pack/textures/models/armor/king_viking_costume.png'), vikingSkin({ horns: true }));
 
 for (const [name, sprite] of Object.entries(SPRITES)) {
   fs.writeFileSync(path.join(out, `resource_pack/textures/items/${name}.png`), render(sprite, 1));

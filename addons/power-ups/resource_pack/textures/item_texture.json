@@ -34,6 +34,12 @@
     },
     "steveo_fire_triangle": {
       "textures": "textures/items/fire_triangle"
+    },
+    "steveo_rabbit_boy_costume": {
+      "textures": "textures/items/rabbit_boy_costume"
+    },
+    "steveo_king_viking_costume": {
+      "textures": "textures/items/king_viking_costume"
     }
   }
 }
