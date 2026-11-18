@@ -34,15 +34,16 @@ can still attack.
 
 ## Costumes
 
-Two cosmetic head-slot items that dress the wearer as a character from the
-book. An add-on cannot change a player's actual skin, so each is a full-body
+Two head-slot items that dress the wearer as a character from the book. Each
+protects like a diamond helmet (3 armor points), takes helmet enchantments,
+and never wears out. An add-on cannot change a player's actual skin, so each is a full-body
 model drawn over it, the way armor is: an attachable in
 `resource_pack/attachables/` with its own geometry.
 
 | Costume | Look | Recipe (shapeless) |
 |---|---|---|
 | Rabbit Boy Costume | White rabbit with tall ears | 4 white wool, carrot |
-| King Viking Costume | Horned helmet with a crown band, orange beard, dark red tunic | 4 orange wool, iron ingot |
+| King Viking Costume | Orange helmet with white horns, big black beard, orange and purple outfit | 4 orange wool, iron ingot |
 
 A costume takes the helmet slot. A chestplate, leggings and boots still draw
 on top of it, and so does anything held in the hands. Your own hand in first
