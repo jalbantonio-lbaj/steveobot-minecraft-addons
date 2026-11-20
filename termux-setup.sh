@@ -31,7 +31,11 @@ else
   git clone --single-branch --branch "$BRANCH" "$URL" "$ROOT"
 fi
 
-if ! command -v pnpm >/dev/null 2>&1; then
+PNPM_MAJOR=0
+if command -v pnpm >/dev/null 2>&1; then
+  PNPM_MAJOR="$(pnpm --version | cut -d. -f1)"
+fi
+if [ "$PNPM_MAJOR" -lt 10 ]; then
   npm install -g pnpm@10.33.0
 fi
 
